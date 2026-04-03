@@ -16,5 +16,5 @@ name       = "TUNNEL_HOST"
 class_name = "TunnelHost"
 
 [[migrations]]
-tag         = "v1"
-new_classes = ["TunnelHost"]
+tag                = "v1"
+new_sqlite_classes = ["TunnelHost"]
