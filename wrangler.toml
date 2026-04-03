@@ -1,5 +1,5 @@
-name             = "lite-http-tunnel"
-main             = "src/index.js"
+name             = "dawn-silence-4226"
+main             = "index.js"
 compatibility_date = "2024-09-01"
 
 # ── Biến môi trường (override trong CF Dashboard → Settings → Variables) ──
