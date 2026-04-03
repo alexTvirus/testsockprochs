@@ -233,9 +233,24 @@ export class TunnelHost {
       // Thông báo tất cả handlers đang pending để trả về 502
       this.emitter.emit('disconnect');
       this.emitter.removeAllListeners();
+       clearInterval(id);
     };
     server.addEventListener('close', onClose);
     server.addEventListener('error', onClose);
+
+    let id = setInterval(()=>{
+    (async () => {
+      if (server.readyState == 1) {
+       
+        try {
+          console.log("server connect")
+        } catch (error) {
+          console.log(error.toString())
+        }
+       
+      }
+    })()
+  }, 700);
 
     return new Response(null, { status: 101, webSocket: client });
   }
