@@ -208,15 +208,16 @@ export class TunnelHost {
 
     // Nhận JSON messages từ tunnel client → phát ra emitter events
     server.addEventListener('message', ({ data }) => {
-      server.send(data.data);
+      
       try {
+        console.log(data)
         const raw = typeof data === 'string' ? data : new TextDecoder().decode(data);
         const msg = JSON.parse(raw);
-
-        if (msg.type === 'ping') {
-          server.send(JSON.stringify({ type: 'pong' }));
-          return;
-        }
+        server.send(JSON.stringify({ type: 'pong' })); return;
+        //if (msg.type === 'ping') {
+       //   server.send(JSON.stringify({ type: 'pong' }));
+       //   return;
+        //}
 
         // Phát event với signature: (requestId, payload)
         // Tất cả handlers đang chờ sẽ lọc theo requestId của mình
@@ -233,24 +234,12 @@ export class TunnelHost {
       // Thông báo tất cả handlers đang pending để trả về 502
       this.emitter.emit('disconnect');
       this.emitter.removeAllListeners();
-       clearInterval(id);
+    
     };
     server.addEventListener('close', onClose);
     server.addEventListener('error', onClose);
 
-    let id = setInterval(()=>{
-    (async () => {
-      if (server.readyState == 1) {
-       
-        try {
-          console.log("server connect")
-        } catch (error) {
-          console.log(error.toString())
-        }
-       
-      }
-    })()
-  }, 700);
+    
 
     return new Response(null, { status: 101, webSocket: client });
   }
