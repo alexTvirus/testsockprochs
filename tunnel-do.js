@@ -10,11 +10,12 @@ export class TunnelDO {
     this.clients = new Map();   // id → WebSocket của client B (ws proxy)
   }
 
-	const TUNNEL_TOKEN = 'abc'
+	
 
   // ─── Router ────────────────────────────────────────────────────────────────
 
   async fetch(request) {
+	  const TUNNEL_TOKEN = 'abc';
     const url     = new URL(request.url);
     const upgrade = request.headers.get('Upgrade');
 
@@ -39,6 +40,7 @@ export class TunnelDO {
   // ─── Tunnel (client A) ─────────────────────────────────────────────────────
 
   _acceptTunnel(request) {
+	  const TUNNEL_TOKEN = 'abc';
 	  console.log("_acceptTunnel")
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response('WebSocket required', { status: 426 });
