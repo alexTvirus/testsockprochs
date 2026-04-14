@@ -19,13 +19,23 @@ export class TunnelDO {
     const url     = new URL(request.url);
     const upgrade = request.headers.get('Upgrade');
 
+	  	if (url.pathname.includes('/reset')) {
+      if (this.tunnel){
+        const socket = this.tunnel;
+         socket.close();
+         this.tunnel = null
+
+      }
+      return new Response("ok", { status: 200 });
+    }
+	  
     // Client A kết nối tunnel
     if (url.pathname === '/$web_tunnel') {
       return this._acceptTunnel(request);
     }
 
     if (!this.tunnel || this.tunnel.readyState !== WebSocket.OPEN) {
-      return new Response('No tunnel connected', { status: 502 });
+      return new Response('No tunnel connected', { status: 200 });
     }
 
     // Client B — WebSocket
@@ -46,16 +56,7 @@ export class TunnelDO {
       return new Response('WebSocket required', { status: 426 });
     }
 	  
-	if (url.pathname.includes('/reset')) {
-      if (this.tunnel){
-        const socket = this.tunnel;
-         socket.close();
-         this.tunnel = null
 
-      }
-      return new Response("ok", { status: 200 });
-    }
-	  
     // Đóng tunnel cũ nếu có
     if (this.tunnel) {
       try { this.tunnel.close(1000, 'Replaced by new connection'); } catch {}
