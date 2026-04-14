@@ -45,19 +45,29 @@ export class TunnelDO {
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response('WebSocket required', { status: 426 });
     }
+	  
+	if (url.pathname.includes('/reset')) {
+      if (this.tunnel){
+        const socket = this.tunnel;
+         socket.close();
+         this.tunnel = null
 
-    // Xác thực token đơn giản
-    const token = request.headers.get('x-tunnel-token')
-                  || new URL(request.url).searchParams.get('token');
-    if (TUNNEL_TOKEN && token !== TUNNEL_TOKEN) {
-      return new Response('Unauthorized', { status: 401 });
+      }
+      return new Response("ok", { status: 200 });
     }
-
+	  
     // Đóng tunnel cũ nếu có
     if (this.tunnel) {
       try { this.tunnel.close(1000, 'Replaced by new connection'); } catch {}
     }
 
+ // Xác thực token đơn giản
+    const token = request.headers.get('x-tunnel-token')
+                  || new URL(request.url).searchParams.get('token');
+    if (TUNNEL_TOKEN && token !== TUNNEL_TOKEN) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+	  
     const [client, server] = Object.values(new WebSocketPair());
     server.accept();
     this.tunnel = server;
