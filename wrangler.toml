@@ -9,6 +9,8 @@ VERIFY_TOKEN           = "abc"
 JWT_GENERATOR_USERNAME = "abc"
 JWT_GENERATOR_PASSWORD = "abc"
 TUNNEL_TOKEN = "abc"
+TAG_A = 'side-a'
+TAG_B = 'side-b'
 
 # ── Durable Objects ───────────────────────────────────────────────────────
 # Mỗi hostname tunnel sẽ có một TunnelHost instance riêng biệt
