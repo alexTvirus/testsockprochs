@@ -22,6 +22,7 @@ const TAG_B = 'side-b';             // client B (browser/app)
 // Text frame payload cho PING / PONG
 const MSG_PING = 'PING';
 const MSG_PONG = 'PONG';
+const LOCAL_DISCONNECTED = 'LOCAL_DISCONNECTED'
 
 // ─── Durable Object ───────────────────────────────────────────────────────────
 
@@ -131,9 +132,13 @@ export class TunnelDO {
     if (typeof message === 'string') {
       if (message === MSG_PING) {
         try { ws.send(MSG_PONG); } catch {}
+		   return;
       }
       // PONG → bỏ qua (latency tracking nếu cần có thể thêm ở đây)
-      return;
+      if(message === LOCAL_DISCONNECTED){
+		   const b = this._getB();
+      		if (b) try { b.close(1001, 'LOCAL_DISCONNECTED'); } catch {}
+	  }
     }
 
     // ── Binary frame: forward thẳng, zero-copy ───────────────────────────────
@@ -177,7 +182,6 @@ export class TunnelDO {
       // A đóng → dừng alarm, báo B
       this.state.storage.deleteAlarm().catch(() => {});
       const b = this._getB();
-		if (b) try { b.send('CLIENT_DISCONNECTED'); } catch {}
       if (b) try { b.close(1001, 'Tunnel disconnected'); } catch {}
       return;
     }
