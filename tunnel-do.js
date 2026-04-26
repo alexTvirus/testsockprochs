@@ -275,55 +275,66 @@ export class TunnelDO {
 
   // ─── WebSocket handlers ────────────────────────────────────────────────
   webSocketMessage(ws, message) {
-    const tags = this._tags(ws);
+        const tags = this._tags(ws);
 
-    if (typeof message === 'string') {
-      if (message === MSG_PING) {
-        try { ws.send(MSG_PONG); } catch {}
-        return;
-      }
-      return;
-    }
-
-    // Binary message
-    if (tags.includes(TAG_A)) {
-      // Nhận từ A: phải có byte type
-      const view = new DataView(message);
-      if (message.byteLength < 1) return;
-      const type = new Uint8Array(message)[0];
-      const payload = message.slice(1);
-
-      if (type === TYPE_RAW) {
-        // Forward đến B
-        const b = this._getB();
-        if (b) {
-          try { b.send(payload); } catch {}
+        if (typeof message === 'string') {
+            if (message === MSG_PING) {
+                try { ws.send(MSG_PONG); } catch {}
+                return;
+            }
+            return;
         }
-      } else if (type === TYPE_HTTP_RES) {
-        const { connId, status, headers, body } = decodeHttpResponse(payload);
-        const pending = this.pendingHttp.get(connId);
-        if (pending) {
-          pending.resolve({ status, headers, body });
-        }
-      } else {
-        console.warn('[DO] Unknown type from A:', type);
-      }
-      return;
-    }
 
-    if (tags.includes(TAG_B)) {
-      // Từ B: raw relay → gắn type 0x00, gửi cho A
-      const a = this._getA();
-      if (a) {
-        const prefix = new Uint8Array([TYPE_RAW]);
-        const combined = new Uint8Array(prefix.byteLength + message.byteLength);
-        combined.set(prefix, 0);
-        combined.set(new Uint8Array(message), prefix.byteLength);
-        try { a.send(combined.buffer); } catch {}
-      }
-      return;
+        if (tags.includes(TAG_A)) {
+            const view = new DataView(message);
+            if (message.byteLength < 1) return;
+            const type = new Uint8Array(message)[0];
+            const payload = message.slice(1);
+
+            if (type === TYPE_RAW) {
+                const b = this._getB();
+                if (b) {
+                    try { b.send(payload); } catch {}
+                }
+            } else if (type === TYPE_HTTP_RES) {
+                console.log(`[DO] Nhận HTTP_RES frame, payloadLen=${payload.byteLength}`);
+                try {
+                    const { connId, status, headers, body } = decodeHttpResponse(payload);
+                    console.log(`[DO] Giải mã HTTP_RES: connId=${connId}, status=${status}`);
+                    const pending = this.pendingHttp.get(connId);
+                    if (pending) {
+                        pending.resolve({ status, headers, body });
+                        console.log(`[DO] Đã resolve pending HTTP ${connId}`);
+                    } else {
+                        console.warn(`[DO] Không tìm thấy pending cho connId=${connId}`);
+                    }
+                } catch (err) {
+                    console.error('[DO] Lỗi decode HTTP response:', err);
+                    // Không resolve => DO sẽ timeout, nhưng ta có thể cố gửi lỗi 502 nếu có pending
+                    // Đọc connId thô từ payload nếu có thể
+                    try {
+                        const connId = new DataView(payload).getUint32(0);
+                        const pending = this.pendingHttp.get(connId);
+                        if (pending) {
+                            pending.resolve({ status: 502, headers: [], body: 'Mallformed response' });
+                        }
+                    } catch {}
+                }
+            }
+            return;
+        }
+
+        if (tags.includes(TAG_B)) {
+            const a = this._getA();
+            if (a) {
+                const prefix = new Uint8Array([TYPE_RAW]);
+                const combined = new Uint8Array(prefix.byteLength + message.byteLength);
+                combined.set(prefix, 0);
+                combined.set(new Uint8Array(message), prefix.byteLength);
+                try { a.send(combined.buffer); } catch {}
+            }
+        }
     }
-  }
 
   webSocketClose(ws, code, reason) {
     const tags = this._tags(ws);
